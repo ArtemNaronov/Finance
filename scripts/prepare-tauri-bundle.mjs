@@ -45,7 +45,8 @@ fs.cpSync(path.join(root, 'server', 'dist'), path.join(serverDir, 'dist'), { rec
 fs.cpSync(path.join(root, 'server', 'node_modules'), path.join(serverDir, 'node_modules'), {
   recursive: true,
 });
-fs.copyFileSync(path.join(root, 'server', 'package.json'), path.join(serverDir, 'package.json'));
+fs.cpSync(path.join(root, 'server', 'package.json'), path.join(serverDir, 'package.json'));
 fs.cpSync(path.join(root, 'client', 'dist'), clientDistDir, { recursive: true });
+fs.cpSync(path.join(root, 'client', 'dist'), path.join(serverDir, 'client-dist'), { recursive: true });
 
 console.log('==> Bundle ready at src-tauri/bundle-resources/');

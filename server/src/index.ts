@@ -1,6 +1,7 @@
 import './config/env.js';
 import express from 'express';
 import cors from 'cors';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { getGateLlmApiKey, getGateLlmBaseUrl, getGateLlmModel } from './config/gatellm-env.js';
@@ -35,7 +36,26 @@ const corsOrigins = process.env.CORS_ORIGIN?.split(',').map((o) => o.trim()) ?? 
   'http://tauri.localhost',
   'capacitor://localhost',
   'http://localhost',
+  'http://127.0.0.1:3001',
 ];
+
+function resolveClientDist(): string | null {
+  const candidates = [
+    process.env.CLIENT_DIST,
+    path.resolve(__dirname, '../client-dist'),
+    path.resolve(__dirname, '../../client/dist'),
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    const dir = path.resolve(candidate);
+    if (fs.existsSync(path.join(dir, 'index.html'))) {
+      return dir;
+    }
+  }
+  return null;
+}
+
+const clientDist = resolveClientDist();
 
 app.use(
   cors({
@@ -74,14 +94,16 @@ app.use('/api/data', dataRouter);
 app.use('/api/search', searchRouter);
 app.use('/api/reminders', remindersRouter);
 
-if (process.env.SERVE_CLIENT === 'true') {
-  const clientDist = process.env.CLIENT_DIST
-    ? path.resolve(process.env.CLIENT_DIST)
-    : path.resolve(__dirname, '../../client/dist');
+if (clientDist) {
   app.use(express.static(clientDist));
-  app.get('*', (_req, res) => {
-    res.sendFile(path.join(clientDist, 'index.html'));
+  app.get(/^(?!\/api).*/, (_req, res, next) => {
+    res.sendFile(path.join(clientDist, 'index.html'), (err) => {
+      if (err) next(err);
+    });
   });
+  console.log(`[static] UI: ${clientDist}`);
+} else if (process.env.SERVE_CLIENT === 'true') {
+  console.error('[static] SERVE_CLIENT=true, но index.html не найден');
 }
 
 app.use(errorHandler);
@@ -91,16 +113,13 @@ if (applied > 0) {
   console.log(`[recurring] Создано повторяющихся операций: ${applied}`);
 }
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(Number(PORT), '127.0.0.1', () => {
+  console.log(`Server running on http://127.0.0.1:${PORT}`);
   console.log(`Version: ${APP_VERSION} | DB: ${dbPath}`);
   console.log(
     `GateLLM: ${getGateLlmApiKey() ? 'ключ загружен' : 'ключ не найден'} | ${getGateLlmBaseUrl()} | ${getGateLlmModel()}`,
   );
   if (process.env.API_TOKEN) {
     console.log('[auth] API_TOKEN включён — запросы требуют Bearer-токен');
-  }
-  if (process.env.SERVE_CLIENT === 'true') {
-    console.log('[static] Раздача клиента из client/dist');
   }
 });
