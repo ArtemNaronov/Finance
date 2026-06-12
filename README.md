@@ -140,14 +140,22 @@ docker compose up --build -d
 
 ### Как выпустить версию
 
+Release запускается **только при push тега** `v*` (push в `main` сам по себе релиз не собирает).
+
 ```bash
-# Обновите version в package.json / tauri.conf.json при необходимости
+# 1. Закоммитьте все изменения (включая workflow)
 git add .
-git commit -m "Release v1.1.6"
-git tag v1.1.6
+git commit -m "Add macOS and Linux desktop installers"
 git push origin main
-git push origin v1.1.6
+
+# 2. Создайте НОВЫЙ тег на текущем коммите и запушьте его
+git tag v1.1.7
+git push origin v1.1.7
 ```
+
+Важно: если тег уже существует (например `v1.1.6`), повторный `git push origin v1.1.6` **не запустит** CI — нужен **новый** номер версии.
+
+Альтернатива: GitHub → **Actions** → **Release** → **Run workflow** (ручной запуск).
 
 Через 15–30 минут на странице **Releases** появятся все артефакты (4 параллельных job в CI).
 
