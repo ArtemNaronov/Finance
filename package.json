@@ -13,6 +13,7 @@
     "test": "npm run test --prefix server",
     "docker:up": "docker compose up --build -d",
     "docker:down": "docker compose down",
+    "tauri": "tauri",
     "tauri:dev": "tauri dev",
     "tauri:build": "tauri build",
     "cap:sync": "npm run build --prefix client && npx cap sync",
