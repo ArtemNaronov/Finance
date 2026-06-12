@@ -1,0 +1,17 @@
+services:
+  finance:
+    build: .
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - SERVE_CLIENT=true
+      - DB_PATH=/data/finance.db
+      - CORS_ORIGIN=http://localhost:3001
+      # - API_TOKEN=your-secret-token
+    volumes:
+      - finance-data:/data
+    restart: unless-stopped
+
+volumes:
+  finance-data:

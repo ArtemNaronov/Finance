@@ -1,0 +1,9 @@
+{
+  "name": "Finance",
+  "short_name": "Finance",
+  "description": "Личные финансы, копилки, бюджеты",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#6366f1",
+  "background_color": "#ffffff"
+}

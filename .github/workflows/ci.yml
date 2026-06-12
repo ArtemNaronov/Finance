@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      - name: Typecheck server
+        run: npx tsc --noEmit --prefix server
+
+      - name: Build client
+        run: npm run build --prefix client
+
+      - name: Run server tests
+        run: node --import tsx --test server/tests/*.test.ts
