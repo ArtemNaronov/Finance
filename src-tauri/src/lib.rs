@@ -1,7 +1,7 @@
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 use std::time::Duration;
-use tauri::Manager;
+use tauri::{AppHandle, Manager, RunEvent};
 
 struct ServerProcess(Mutex<Option<Child>>);
 
@@ -11,6 +11,16 @@ fn wait_for_server(port: u16) {
             return;
         }
         std::thread::sleep(Duration::from_millis(250));
+    }
+}
+
+fn stop_server(app: &AppHandle) {
+    if let Some(state) = app.try_state::<ServerProcess>() {
+        if let Ok(mut guard) = state.0.lock() {
+            if let Some(mut child) = guard.take() {
+                let _ = child.kill();
+            }
+        }
     }
 }
 
@@ -43,24 +53,19 @@ fn start_server(app: &tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .manage(ServerProcess(Mutex::new(None)))
         .setup(|app| {
             #[cfg(not(debug_assertions))]
             start_server(app)?;
             Ok(())
         })
-        .on_event(|app, event| {
-            if let tauri::RunEvent::Exit = event {
-                if let Some(state) = app.try_state::<ServerProcess>() {
-                    if let Ok(mut guard) = state.0.lock() {
-                        if let Some(mut child) = guard.take() {
-                            let _ = child.kill();
-                        }
-                    }
-                }
-            }
-        })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        if let RunEvent::Exit = event {
+            stop_server(app_handle);
+        }
+    });
 }
