@@ -48,7 +48,7 @@ jobs:
           Copy-Item "node-v$version-win-x64/node.exe" src-tauri/bundle-resources/bin/node.exe
 
       - name: Generate app icons
-        run: npx tauri icon client/public/pwa-512.png
+        run: npx tauri icon client/public/icon.svg
 
       - name: Build and publish Windows installer
         uses: tauri-apps/tauri-action@v0

@@ -162,7 +162,7 @@ Expand-Archive node.zip -DestinationPath .
 New-Item -Force -ItemType Directory src-tauri/bundle-resources/bin
 Copy-Item "node-v$v-win-x64/node.exe" src-tauri/bundle-resources/bin/
 
-npx tauri icon client/public/pwa-512.png
+npx tauri icon client/public/icon.svg
 npm run tauri:build
 ```
 

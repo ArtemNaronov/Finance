@@ -8,7 +8,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['vite.svg'],
+      includeAssets: ['icon.svg'],
       manifest: {
         name: 'Finance — финансовый учёт',
         short_name: 'Finance',
@@ -19,14 +19,10 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: 'pwa-192.png',
-            sizes: '192x192',
-            type: 'image/png',
-          },
-          {
-            src: 'pwa-512.png',
+            src: 'icon.svg',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/svg+xml',
+            purpose: 'any maskable',
           },
         ],
       },
