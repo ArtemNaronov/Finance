@@ -22,7 +22,7 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^7.0.0",
-    "@tauri-apps/cli": "^2.2.0",
+    "@tauri-apps/cli": "^2.11.2",
     "concurrently": "^9.1.2",
     "cross-env": "^7.0.3"
   },

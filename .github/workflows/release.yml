@@ -50,6 +50,10 @@ jobs:
       - name: Generate app icons
         run: npx tauri icon client/public/icon.svg
 
+      - name: Pin time crate (workaround for time 0.3.48)
+        working-directory: src-tauri
+        run: cargo update -p time --precise 0.3.47
+
       - name: Build and publish Windows installer
         uses: tauri-apps/tauri-action@v0
         env:
