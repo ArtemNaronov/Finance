@@ -93,7 +93,7 @@ SERVE_CLIENT=true npm run start --prefix server
 | Платформа | Способ запуска |
 |-----------|----------------|
 | **Браузер (PWA)** | `npm run dev` → «Установить приложение» в Chrome/Edge/Safari |
-| **Windows / macOS** | Скачать `.exe` из [GitHub Releases](../../releases) или собрать локально (`npm run tauri:build`) |
+| **Windows / macOS / Linux** | Скачать установщик из [GitHub Releases](../../releases) или собрать локально (`npm run bundle:node && npm run tauri:build`) |
 | **Docker** | `docker compose up --build` → http://localhost:3001 |
 | **iOS / Android** | `npm run cap:sync` → `npm run cap:android` / `cap:ios` (нужны Android Studio / Xcode) |
 
@@ -126,47 +126,64 @@ docker compose up --build -d
 
 Переменная `DB_PATH` задаёт путь к файлу SQLite на хосте или в контейнере.
 
-## Скачать .exe для Windows (GitHub Releases)
+## Скачать десктопное приложение (GitHub Releases)
 
-При пуше тега `v*` (например `v1.1.0`) GitHub Actions автоматически собирает установщик Windows и публикует его в **Releases**.
+При пуше тега `v*` (например `v1.1.6`) GitHub Actions собирает установщики для **Windows, macOS и Linux** и публикует их в **Releases**.
+
+| Платформа | Файл |
+|-----------|------|
+| Windows 10/11 | `Finance_*_x64-setup.exe` |
+| macOS Apple Silicon (M1+) | `Finance_*_aarch64.dmg` |
+| macOS Intel | `Finance_*_x64.dmg` |
+| Linux Debian/Ubuntu | `finance_*_amd64.deb` |
+| Linux (универсально) | `Finance_*_amd64.AppImage` |
 
 ### Как выпустить версию
 
 ```bash
 # Обновите version в package.json / tauri.conf.json при необходимости
 git add .
-git commit -m "Release v1.1.0"
-git tag v1.1.0
+git commit -m "Release v1.1.6"
+git tag v1.1.6
 git push origin main
-git push origin v1.1.0
+git push origin v1.1.6
 ```
 
-Через несколько минут на странице **Releases** появится файл `Finance_1.1.0_x64-setup.exe`.
+Через 15–30 минут на странице **Releases** появятся все артефакты (4 параллельных job в CI).
 
 ### Как скачать пользователю
 
 1. Откройте вкладку **Releases** репозитория на GitHub
 2. Выберите последнюю версию
-3. Скачайте **Finance_*_x64-setup.exe**
-4. Установите — приложение работает автономно, база данных в `%APPDATA%\com.finance.app\`
+3. Скачайте файл для своей ОС (см. таблицу выше)
+4. Установите — приложение работает автономно
 
-### Локальная сборка .exe (Windows)
+**Где хранятся данные:**
+- Windows: `%APPDATA%\com.finance.app\`
+- macOS: `~/Library/Application Support/com.finance.app/`
+- Linux: `~/.local/share/com.finance.app/`
 
-Требуется [Rust](https://rustup.rs) и Visual Studio Build Tools.
+**macOS без подписи Apple:** если система пишет «приложение повреждено», откройте через ПКМ → «Открыть» или выполните в Terminal:
+`xattr -cr /Applications/Finance.app`
 
-```powershell
-# Portable Node для бандла (один раз перед сборкой)
-$v = "22.12.0"
-Invoke-WebRequest "https://nodejs.org/dist/v$v/node-v$v-win-x64.zip" -OutFile node.zip
-Expand-Archive node.zip -DestinationPath .
-New-Item -Force -ItemType Directory src-tauri/bundle-resources/bin
-Copy-Item "node-v$v-win-x64/node.exe" src-tauri/bundle-resources/bin/
+### Локальная сборка (Windows / macOS / Linux)
 
+Требуется [Rust](https://rustup.rs). На Linux дополнительно:
+
+```bash
+sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+```
+
+```bash
+npm run install:all
+npm run bundle:node          # portable Node в src-tauri/bundle-resources/bin/
 npx tauri icon client/public/icon.svg
 npm run tauri:build
 ```
 
-Готовый установщик: `src-tauri/target/release/bundle/nsis/Finance_*_x64-setup.exe`
+Готовые файлы: `src-tauri/target/release/bundle/` (`nsis/`, `dmg/`, `deb/`, `appimage/`).
+
+**Windows (PowerShell)** — то же самое, `npm run bundle:node` скачает `node.exe` автоматически.
 
 ## Конфигурация
 
@@ -286,7 +303,8 @@ finance/
 | `npm test` | Тесты backend |
 | `npm run docker:up` | Запуск в Docker |
 | `npm run tauri:dev` | Десктоп (Tauri, dev) |
-| `npm run tauri:build` | Сборка .exe локально (Windows) |
+| `npm run tauri:build` | Сборка десктопного установщика (Tauri) |
+| `npm run bundle:node` | Скачать portable Node для Tauri-бандла |
 | `npm run cap:sync` | Синхронизация Capacitor (iOS/Android) |
 
 ## Лицензия

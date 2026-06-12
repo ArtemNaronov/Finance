@@ -9,11 +9,43 @@ permissions:
   contents: write
 
 jobs:
-  release-windows:
-    runs-on: windows-latest
+  release:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            node_platform: win
+            node_arch: x64
+            bundles: --bundles nsis
+            rust_targets: ''
+          - platform: macos-latest
+            node_platform: darwin
+            node_arch: arm64
+            bundles: --target aarch64-apple-darwin --bundles dmg
+            rust_targets: aarch64-apple-darwin
+          - platform: macos-latest
+            node_platform: darwin
+            node_arch: x64
+            bundles: --target x86_64-apple-darwin --bundles dmg
+            rust_targets: x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            node_platform: linux
+            node_arch: x64
+            bundles: --bundles deb,appimage
+            rust_targets: ''
+
+    runs-on: ${{ matrix.platform }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install Linux dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -28,6 +60,15 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Add Rust targets
+        if: matrix.rust_targets != ''
+        run: rustup target add ${{ matrix.rust_targets }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+
       - name: Install root dependencies
         run: npm ci --ignore-scripts
 
@@ -38,14 +79,7 @@ jobs:
         run: npm ci --prefix client
 
       - name: Download portable Node.js
-        shell: pwsh
-        run: |
-          $version = "22.12.0"
-          $zip = "node-v$version-win-x64.zip"
-          Invoke-WebRequest -Uri "https://nodejs.org/dist/v$version/$zip" -OutFile $zip
-          Expand-Archive $zip -DestinationPath .
-          New-Item -ItemType Directory -Force -Path src-tauri/bundle-resources/bin | Out-Null
-          Copy-Item "node-v$version-win-x64/node.exe" src-tauri/bundle-resources/bin/node.exe
+        run: node scripts/download-bundle-node.mjs ${{ matrix.node_platform }} ${{ matrix.node_arch }}
 
       - name: Generate app icons
         run: npx tauri icon client/public/icon.svg
@@ -54,7 +88,7 @@ jobs:
         working-directory: src-tauri
         run: cargo update -p time --precise 0.3.47
 
-      - name: Build and publish Windows installer
+      - name: Build and publish
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -62,11 +96,25 @@ jobs:
           tagName: ${{ github.ref_name }}
           releaseName: Finance ${{ github.ref_name }}
           releaseBody: |
-            ## Finance для Windows
+            ## Finance — десктопные сборки
 
-            Скачайте **Finance_*_x64-setup.exe** — установщик для Windows 10/11.
+            | Платформа | Файл |
+            |-----------|------|
+            | **Windows 10/11** | `Finance_*_x64-setup.exe` (NSIS) |
+            | **macOS Apple Silicon (M1+)** | `Finance_*_aarch64.dmg` |
+            | **macOS Intel** | `Finance_*_x64.dmg` |
+            | **Linux (Debian/Ubuntu)** | `finance_*_amd64.deb` |
+            | **Linux (универсально)** | `Finance_*_amd64.AppImage` |
 
-            После установки приложение работает автономно: данные хранятся в папке пользователя.
+            После установки приложение работает автономно. База данных хранится локально:
+            - Windows: `%APPDATA%\com.finance.app\`
+            - macOS: `~/Library/Application Support/com.finance.app/`
+            - Linux: `~/.local/share/com.finance.app/` (или XDG data dir)
+
+            **macOS без подписи Apple:** если система пишет «повреждено», откройте через ПКМ → «Открыть» или выполните:
+            `xattr -cr /Applications/Finance.app`
+
+            **ИИ (GateLLM):** ключ не входит в установщик — задайте `GATELLM_API_KEY` в окружении или используйте экспорт/импорт без облачных функций.
           releaseDraft: false
           prerelease: false
-          args: --bundles nsis
+          args: ${{ matrix.bundles }}
