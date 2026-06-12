@@ -63,7 +63,7 @@
 
 ```bash
 # Установка зависимостей (корень + server + client)
-npm install
+npm run install:all
 
 # Запуск backend (:3001) и frontend (:5173)
 npm run dev
@@ -277,7 +277,7 @@ finance/
 
 | Команда | Действие |
 |---------|----------|
-| `npm install` | Установить зависимости во всех пакетах |
+| `npm run install:all` | Установить зависимости во всех пакетах |
 | `npm run dev` | Backend + frontend в режиме разработки |
 | `npm run dev:server` | Только backend |
 | `npm run dev:client` | Только frontend |

@@ -20,12 +20,22 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            server/package-lock.json
+            client/package-lock.json
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install dependencies
-        run: npm run install:all
+      - name: Install root dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install server dependencies
+        run: npm ci --prefix server
+
+      - name: Install client dependencies
+        run: npm ci --prefix client
 
       - name: Download portable Node.js
         shell: pwsh
@@ -53,12 +63,6 @@ jobs:
             Скачайте **Finance_*_x64-setup.exe** — установщик для Windows 10/11.
 
             После установки приложение работает автономно: данные хранятся в папке пользователя.
-
-            ### Как выпустить новую версию
-            ```bash
-            git tag v1.1.0
-            git push origin v1.1.0
-            ```
           releaseDraft: false
           prerelease: false
           args: --bundles nsis
