@@ -93,7 +93,7 @@ SERVE_CLIENT=true npm run start --prefix server
 | Платформа | Способ запуска |
 |-----------|----------------|
 | **Браузер (PWA)** | `npm run dev` → «Установить приложение» в Chrome/Edge/Safari |
-| **Windows / macOS** | `npm run tauri:dev` (нужны [Rust](https://rustup.rs) и Tauri deps) |
+| **Windows / macOS** | Скачать `.exe` из [GitHub Releases](../../releases) или собрать локально (`npm run tauri:build`) |
 | **Docker** | `docker compose up --build` → http://localhost:3001 |
 | **iOS / Android** | `npm run cap:sync` → `npm run cap:android` / `cap:ios` (нужны Android Studio / Xcode) |
 
@@ -125,6 +125,48 @@ docker compose up --build -d
 Данные сохраняются в volume `finance-data` (путь в контейнере: `/data/finance.db`).
 
 Переменная `DB_PATH` задаёт путь к файлу SQLite на хосте или в контейнере.
+
+## Скачать .exe для Windows (GitHub Releases)
+
+При пуше тега `v*` (например `v1.1.0`) GitHub Actions автоматически собирает установщик Windows и публикует его в **Releases**.
+
+### Как выпустить версию
+
+```bash
+# Обновите version в package.json / tauri.conf.json при необходимости
+git add .
+git commit -m "Release v1.1.0"
+git tag v1.1.0
+git push origin main
+git push origin v1.1.0
+```
+
+Через несколько минут на странице **Releases** появится файл `Finance_1.1.0_x64-setup.exe`.
+
+### Как скачать пользователю
+
+1. Откройте вкладку **Releases** репозитория на GitHub
+2. Выберите последнюю версию
+3. Скачайте **Finance_*_x64-setup.exe**
+4. Установите — приложение работает автономно, база данных в `%APPDATA%\com.finance.app\`
+
+### Локальная сборка .exe (Windows)
+
+Требуется [Rust](https://rustup.rs) и Visual Studio Build Tools.
+
+```powershell
+# Portable Node для бандла (один раз перед сборкой)
+$v = "22.12.0"
+Invoke-WebRequest "https://nodejs.org/dist/v$v/node-v$v-win-x64.zip" -OutFile node.zip
+Expand-Archive node.zip -DestinationPath .
+New-Item -Force -ItemType Directory src-tauri/bundle-resources/bin
+Copy-Item "node-v$v-win-x64/node.exe" src-tauri/bundle-resources/bin/
+
+npx tauri icon client/public/pwa-512.png
+npm run tauri:build
+```
+
+Готовый установщик: `src-tauri/target/release/bundle/nsis/Finance_*_x64-setup.exe`
 
 ## Конфигурация
 
@@ -243,7 +285,8 @@ finance/
 | `npm start` | Production: сервер + UI на :3001 |
 | `npm test` | Тесты backend |
 | `npm run docker:up` | Запуск в Docker |
-| `npm run tauri:dev` | Десктоп (Tauri) |
+| `npm run tauri:dev` | Десктоп (Tauri, dev) |
+| `npm run tauri:build` | Сборка .exe локально (Windows) |
 | `npm run cap:sync` | Синхронизация Capacitor (iOS/Android) |
 
 ## Лицензия

@@ -7,3 +7,6 @@ server/.env
 *.db-wal
 .DS_Store
 server/data/
+src-tauri/target/
+src-tauri/bundle-resources/
+src-tauri/icons/

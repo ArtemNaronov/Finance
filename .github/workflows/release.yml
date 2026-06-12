@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install dependencies
+        run: npm run install:all
+
+      - name: Download portable Node.js
+        shell: pwsh
+        run: |
+          $version = "22.12.0"
+          $zip = "node-v$version-win-x64.zip"
+          Invoke-WebRequest -Uri "https://nodejs.org/dist/v$version/$zip" -OutFile $zip
+          Expand-Archive $zip -DestinationPath .
+          New-Item -ItemType Directory -Force -Path src-tauri/bundle-resources/bin | Out-Null
+          Copy-Item "node-v$version-win-x64/node.exe" src-tauri/bundle-resources/bin/node.exe
+
+      - name: Generate app icons
+        run: npx tauri icon client/public/pwa-512.png
+
+      - name: Build and publish Windows installer
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: Finance ${{ github.ref_name }}
+          releaseBody: |
+            ## Finance для Windows
+
+            Скачайте **Finance_*_x64-setup.exe** — установщик для Windows 10/11.
+
+            После установки приложение работает автономно: данные хранятся в папке пользователя.
+
+            ### Как выпустить новую версию
+            ```bash
+            git tag v1.1.0
+            git push origin v1.1.0
+            ```
+          releaseDraft: false
+          prerelease: false
+          args: --bundles nsis

@@ -75,7 +75,9 @@ app.use('/api/search', searchRouter);
 app.use('/api/reminders', remindersRouter);
 
 if (process.env.SERVE_CLIENT === 'true') {
-  const clientDist = path.resolve(__dirname, '../../client/dist');
+  const clientDist = process.env.CLIENT_DIST
+    ? path.resolve(process.env.CLIENT_DIST)
+    : path.resolve(__dirname, '../../client/dist');
   app.use(express.static(clientDist));
   app.get('*', (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
